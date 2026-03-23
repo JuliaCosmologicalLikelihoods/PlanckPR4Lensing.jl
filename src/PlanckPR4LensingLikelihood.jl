@@ -2,19 +2,7 @@ module PlanckPR4LensingLikelihood
 
 using LinearAlgebra, DelimitedFiles, Printf, Artifacts, NPZ
 
-const DATA_DIR = artifact"planck_pr4_lensing_data"
-
-function _dataset_path(filename)
-    p = joinpath(DATA_DIR, "planck_pr4_data_complete", filename)
-    isfile(p) || error("Data file not found: $p
-Artifact may not be installed. Run `using Pkg; Pkg.instantiate()`.")
-    return p
-end
-
-# ------------------------------------------------------------------ #
-#  Data structures                                                     #
-# ------------------------------------------------------------------ #
-
+# 1. Struct definitions
 struct LensingLikelihood
     cl_hat::Vector{Float64}
     cov_inv::Matrix{Float64}
@@ -41,43 +29,66 @@ struct MargLensingLikelihood
     nbins::Int
 end
 
-# ------------------------------------------------------------------ #
-#  Constructors                                                        #
-# ------------------------------------------------------------------ #
-
-function PlanckPR4Lensing()
+# 2. Internal builders (all artifact resolution happens here)
+function _build_lensing()
+    data_dir = artifact"planck_pr4_lensing_data"
+    function _path(filename)
+        p = joinpath(data_dir, "planck_pr4_data_complete", filename)
+        isfile(p) || error("Data file not found: $p")
+        return p
+    end
     lmin, lmax, nbins = 2, 2500, 9
     
-    cl_hat = npzread(_dataset_path("bandpowers.npy"))
-    cov = npzread(_dataset_path("covmat.npy"))
+    cl_hat = vec(npzread(_path("bandpowers.npy")))
+    cov = npzread(_path("covmat.npy"))
     cov_inv = inv(cov)
     
-    win_PP = npzread(_dataset_path("windows_PP.npy"))
+    win_PP = npzread(_path("windows_PP.npy"))
     
-    delta_cl_fid = npzread(_dataset_path("fid_correction.npy"))
+    delta_cl_fid = vec(npzread(_path("fid_correction.npy")))
     
-    win_delta = permutedims(npzread(_dataset_path("win_delta.npy")), (2, 3, 1))
+    win_delta = permutedims(npzread(_path("win_delta.npy")), (2, 3, 1))
     
-    return LensingLikelihood(vec(cl_hat), cov_inv, win_PP, lmin:lmax, vec(delta_cl_fid), win_delta, lmin:lmax, lmin, lmax, nbins)
+    return LensingLikelihood(cl_hat, cov_inv, win_PP, lmin:lmax, delta_cl_fid, win_delta, lmin:lmax, lmin, lmax, nbins)
 end
 
-function PlanckPR4LensingMarged()
+function _build_marged_lensing()
+    data_dir = artifact"planck_pr4_lensing_data"
+    function _path(filename)
+        p = joinpath(data_dir, "planck_pr4_data_complete", filename)
+        isfile(p) || error("Data file not found: $p")
+        return p
+    end
     lmin, lmax, nbins = 2, 2500, 9
     
-    cl_hat = npzread(_dataset_path("bandpowers.npy"))
-    cov = npzread(_dataset_path("covmat_marged.npy"))
+    cl_hat = vec(npzread(_path("bandpowers.npy")))
+    cov = npzread(_path("covmat_marged.npy"))
     cov_inv = inv(cov)
     
-    win_PP = npzread(_dataset_path("windows_PP.npy"))
+    win_PP = npzread(_path("windows_PP.npy"))
 
-    delta_cl_fid = npzread(_dataset_path("fid_correction.npy"))
+    delta_cl_fid = vec(npzread(_path("fid_correction.npy")))
 
-    win_delta = permutedims(npzread(_dataset_path("win_delta.npy")), (2, 3, 1))
+    win_delta = permutedims(npzread(_path("win_delta.npy")), (2, 3, 1))
     
-    return MargLensingLikelihood(vec(cl_hat), cov_inv, win_PP, lmin:lmax, vec(delta_cl_fid), win_delta, lmin:lmax, lmin, lmax, nbins)
+    return MargLensingLikelihood(cl_hat, cov_inv, win_PP, lmin:lmax, delta_cl_fid, win_delta, lmin:lmax, lmin, lmax, nbins)
 end
 
-# ... rest of file is the same
+# 3. Module-level Refs (empty at precompile time)
+const _lensing_likelihood        = Ref{LensingLikelihood}()
+const _marged_lensing_likelihood = Ref{MargLensingLikelihood}()
+
+# 4. __init__: runs once at `using` time, populates Refs
+function __init__()
+    _lensing_likelihood[]        = _build_lensing()
+    _marged_lensing_likelihood[] = _build_marged_lensing()
+end
+
+# 5. Public zero-cost accessors
+PlanckPR4Lensing()       = _lensing_likelihood[]
+PlanckPR4LensingMarged() = _marged_lensing_likelihood[]
+
+# 6. compute_total_binned, loglike — unchanged from current code
 function compute_total_binned(lik::LensingLikelihood, cl_pp, cl_tt, cl_ee, cl_te; A_planck=1.0)
     C_b = lik.win_PP * cl_pp[lik.ell_PP .+ 1]
     cl_tt_scaled = cl_tt[lik.ell_delta .+ 1] ./ A_planck^2
