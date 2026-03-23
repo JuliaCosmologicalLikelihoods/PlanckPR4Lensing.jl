@@ -1,14 +1,22 @@
 name = "PlanckPR4LensingLikelihood"
 uuid = "55f52800-8452-446a-86c2-19e585f9227d"
-authors = ["Marco Bonici <marco.bonici@inaf.it>"]
 version = "0.1.0"
+authors = ["Marco Bonici <marco.bonici@inaf.it>"]
 
 [deps]
-LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-NPZ = "15e1cf62-19b3-5cfa-8e77-841668bca605"
+ArtifactUtils = "8b73e784-e7d8-4ea5-973d-377fed4e3bce"
+Artifacts = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
+DifferentiationInterface = "a0c0ee7d-e4b9-4e03-894e-1c5f64a51d63"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
+NPZ = "15e1cf62-19b3-5cfa-8e77-841668bca605"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
+
+[compat]
+ArtifactUtils = "0.2.5"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

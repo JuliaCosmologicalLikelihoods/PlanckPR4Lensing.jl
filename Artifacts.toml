@@ -1,0 +1,6 @@
+[planck_pr4_lensing_data]
+git-tree-sha1 = "c47ad38f9a145eea8f95ce4b4acc6327031c722b"
+
+    [[planck_pr4_lensing_data.download]]
+    sha256 = "990442efa85c19654efed844c0e08662e33089f9fb008ec35c835a52563bb4b9"
+    url = "https://zenodo.org/records/19193579/files/planck_pr4_data_complete.tar.xz"
